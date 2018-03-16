@@ -72,7 +72,7 @@ winPoint =  int(winPercent*nz)
 
 delimiter = ''
 dz=dy=dx=Lz/nz
-specout = 4000
+specout = 20000
 step = []
 totalstep=839626
 for i in range(totalstep/specout):
@@ -97,7 +97,7 @@ ensbub2 = np.zeros(len(step))
 enspk2 = np.zeros(len(step))
 
 
-ii=0
+i=0
 
 
 test = []
@@ -126,14 +126,13 @@ for istep in step:
     bub_loc = np.argmax(m2_grad)
 
 
-    sp_loc_all[ii] = sp_loc
-    bub_loc_all[ii] = bub_loc
+    sp_loc_all[i] = sp_loc
+    bub_loc_all[i] = bub_loc
+    
+    
 
-    ii = ii + 1
 
-i=0
 
-for istep in step:
     print 'finish', 100*float(istep)/totalstep,'%'
     
     #obtain velocity 
@@ -150,6 +149,16 @@ for istep in step:
     filepath = delimiter.join(mylist)
     databk = h5file.get(filepath)
     vz = np.array(databk)
+    
+    
+    if nx == 1:
+    	    m1 = (vz[:, ny/2-1, 0] + vz[:, ny/2, 0] )/2
+    else:
+    	    m1 = (vz[:, ny/2-1, nx/2-1] + vz[:, ny/2, nx/2] 
+    	  + vz[:, ny/2-1, nx/2] + vz[:, ny/2, nx/2-1])/4.0
+
+    bub_velo_all[i] = m1[bub_loc]
+    sp_velo_all[i] = m1[sp_loc]
     
     #cacluate vorticity
     if nx == 1:
@@ -214,30 +223,10 @@ for istep in step:
 ensbub = 2 * ensbub
 enspk = 2 * enspk
 
-"""   
-    for k in range(nz):
-        if rho_data[k, j, 0] == rho_inc:
-            spk_inc_loc = k
-        break
-    
-    if spk_inc_loc <= spkRegion:
-        enspk[seq] = enspk[seq] + np.sum(vorx[spk_inc_loc:spkRegion, j, :]**2
-                 + vory[spk_inc_loc:spkRegion, j, :]**2
-                 + vorz[spk_inc_loc:spkRegion, j, :]**2)*dx*dy*dz 
-    
-    '''
-    
-    #done
-
-    
 
 
-"""
-
-plt.plot(ensbub, label='bub curve')
-plt.plot(enspk, label='spk curve')
-plt.plot(ensbub2, label='bub square')
-plt.plot(enspk2, label='spk square')
+plt.plot(ensbub2, label='bub curve')
+plt.plot(enspk2, label='spk curve')
 pylab.legend(loc='best')
 plt.show()
 
