@@ -43,9 +43,11 @@ g=1.0
 inFile="tests_single_new.h5"
 Lz=3.2
 ##maximum average height (grid point)
-winPoint =  40
-rhoH =1.0
-rhoL =0.8
+#average over how much percent of total height
+winPercent = 0.1
+
+rhoH =1.0833
+rhoL =1.0
 rho_inc = (rhoH + rhoL)/2.0
 
 waveLen = 0.4
@@ -66,20 +68,20 @@ nz=m1.shape[0]
 ny=m1.shape[1]
 nx=m1.shape[2]
 
+winPoint =  int(winPercent*nz)
+
 delimiter = ''
 dz=dy=dx=Lz/nz
-specout = 1000
-skip = 20
-seq = 0
+specout = 4000
 step = []
-for i in range(40):
+totalstep=839626
+for i in range(totalstep/specout):
     step.append(str((i+1)*specout).zfill(6))
-#initialize time dependent mixing layer width, KE, PE, enstropy
+
+
 vorx = np.zeros((nz, ny, nx))
 vory = np.zeros((nz, ny, nx))
 vorz = np.zeros((nz, ny, nx))
-enstropy = np.zeros(len(step))  
-sum_x = np.zeros(len(step))  
 
 
 bub_loc_all = np.zeros(len(step))
@@ -89,9 +91,16 @@ bub_velo_all = np.zeros(len(step))
 bub_velo_all_aver = np.zeros(len(step))
 sp_velo_all = np.zeros(len(step))
 bub_velo_all_ori = np.zeros(len(step))
+ensbub = np.zeros(len(step))
+enspk = np.zeros(len(step))
+ensbub2 = np.zeros(len(step))
+enspk2 = np.zeros(len(step))
 
 
 ii=0
+
+
+test = []
 #calculate bubble and spike location
 for istep in step:
     mylist = ['Fields/', variable[4], '/', istep]
@@ -122,25 +131,90 @@ for istep in step:
 
     ii = ii + 1
 
+i=0
+
+for istep in step:
+    print 'finish', 100*float(istep)/totalstep,'%'
+    
+    #obtain velocity 
+    
+    mylist = ['Fields/',variable[0],'/',istep]
+    filepath = delimiter.join(mylist)
+    databk = h5file.get(filepath)
+    vx = np.array(databk)
+    mylist = ['Fields/',variable[1],'/',istep]
+    filepath = delimiter.join(mylist)
+    databk = h5file.get(filepath)
+    vy = np.array(databk)
+    mylist = ['Fields/',variable[2],'/',istep]
+    filepath = delimiter.join(mylist)
+    databk = h5file.get(filepath)
+    vz = np.array(databk)
+    
+    #cacluate vorticity
+    if nx == 1:
+		vorx = np.gradient(vz, dz, axis=1) - np.gradient(vy, dz, axis=0)
+    else:
+		vorx = np.gradient(vz, dz, axis=1) - np.gradient(vy, dz, axis=0)
+		vory = np.gradient(vx, dz, axis=0) - np.gradient(vz, dz, axis=2)
+		vorz = np.gradient(vy, dz, axis=2) - np.gradient(vx, dz, axis=1)
 
 
+    #set avearging area
+    bubRegion = int(bub_loc_all[i] - winPoint)
+    spkRegion = int(sp_loc_all[i] + winPoint)
+    
+    #calcuate vorticity behind bub 
+    for j in range(ny/2):
+    
+        for k in reversed(range(nz)):
+            
+            if (rho_data[k, j, 0] > rho_inc) and (rho_data[k-1, j, 0] < rho_inc):
+                bub_inc_loc = k
+                break
+  
+        if bub_inc_loc > bubRegion:
+            ensbub[i] = ensbub[i] + np.sum(vorx[bubRegion:bub_inc_loc, j, :]**2
+                     + vory[bubRegion:bub_inc_loc, j, :]**2
+                     + vorz[bubRegion:bub_inc_loc, j, :]**2)*dx*dy*dz 
+                  
+                  
+                 
+                  
+                  
+    #calcuate vorticity behind spike             
+    for j in reversed(range(ny/2)):
+    
+        for k in range(nz):
+            
+            if (rho_data[k, j, 0] < rho_inc) and (rho_data[k+1, j, 0] > rho_inc):
+                spk_inc_loc = k
+                break
+    
+        if spk_inc_loc < spkRegion:
+            enspk[i] = enspk[i] + np.sum(vorx[spk_inc_loc:spkRegion, j, :]**2
+                     + vory[spk_inc_loc:spkRegion, j, :]**2
+                     + vorz[spk_inc_loc:spkRegion, j, :]**2)*dx*dy*dz 
+        test.append(spk_inc_loc)
+                 
+    ensbub2[i] = ensbub2[i] + np.sum(vorx[bubRegion:int(bub_loc_all[i]), :, :]**2
+                     + vory[bubRegion:int(bub_loc_all[i]), :, :]**2
+                     + vorz[bubRegion:int(bub_loc_all[i]), :, :]**2)*dx*dy*dz 
+    enspk2[i] = enspk2[i] + np.sum(vorx[int(sp_loc_all[i]):spkRegion, :, :]**2
+                     + vory[int(sp_loc_all[i]):spkRegion, :, :]**2
+                     + vorz[int(sp_loc_all[i]):spkRegion, :, :]**2)*dx*dy*dz 
+       
 
-enstrophy = 0.0
-bubRegion = bub_loc_all[i] - winPoint
-spkRegion = sp_loc_all[i] + winPoint
-for j in range(ny):
+
+    i = i + 1
+
     
     
-    for k in reversed(range(nz)):
-        if rho_data[k, j, 0] == rho_inc:
-            bub_inc_loc = k
-        break
     
-    if bub_inc_loc >= bubRegion:
-        ensbub[seq] = ensbub[seq] + np.sum(vorx[bubRegion:bub_inc_loc, j, :]**2
-                 + vory[bubRegion:bub_inc_loc, j, :]**2
-                 + vorz[bubRegion:bub_inc_loc, j, :]**2)*dx*dy*dz 
-              
+ensbub = 2 * ensbub
+enspk = 2 * enspk
+
+"""   
     for k in range(nz):
         if rho_data[k, j, 0] == rho_inc:
             spk_inc_loc = k
@@ -151,56 +225,22 @@ for j in range(ny):
                  + vory[spk_inc_loc:spkRegion, j, :]**2
                  + vorz[spk_inc_loc:spkRegion, j, :]**2)*dx*dy*dz 
     
-    
+    '''
     
     #done
 
     
-    max(bubRegion)
-        
-    enstrophy[seq] = enstrophy[seq]+ np.sum(vorx[:, ny/2-1, :]**2
-                 +vory[:, ny/2-1, :]**2+vorz[:, ny/2-1, :]**2)*dx*dy*dz 
-"""
-	mylist = ['Fields/',variable[4],'/',istep]
-	filepath = delimiter.join(mylist)
-	databk = h5file.get(filepath)
-	rho = np.array(databk)
-	
-	
-	mylist = ['Fields/',variable[0],'/',istep]
-	filepath = delimiter.join(mylist)
-	databk = h5file.get(filepath)
-	vx = np.array(databk)
-	mylist = ['Fields/',variable[1],'/',istep]
-	filepath = delimiter.join(mylist)
-	databk = h5file.get(filepath)
-	vy = np.array(databk)
-	mylist = ['Fields/',variable[2],'/',istep]
-	filepath = delimiter.join(mylist)
-	databk = h5file.get(filepath)
-	vz = np.array(databk)
-	ke[seq] = 0.5 * np.sum((vx**2 + vy**2 + vz**2) * rho)*dx*dy*dz
-	#internal energy
-	mylist = ['Fields/',variable[3],'/',istep]
-	filepath = delimiter.join(mylist)
-	databk = h5file.get(filepath)
-	press = np.array(databk)
 
-	#enstrophy
-	
-	if nx == 1:
-		vorx = np.gradient(vz, dz, axis=1) - np.gradient(vy, dz, axis=0)
-	else:
-		vorx = np.gradient(vz, dz, axis=1) - np.gradient(vy, dz, axis=0)
-		vory = np.gradient(vx, dz, axis=0) - np.gradient(vz, dz, axis=2)
-		vorz = np.gradient(vy, dz, axis=2) - np.gradient(vx, dz, axis=1)
-
-
-	enstropy[seq] = 0.5*np.sum(vorx**2+vory**2+vorz**2)*dx*dy*dz 
-	
-		seq += 1
 
 """
+
+plt.plot(ensbub, label='bub curve')
+plt.plot(enspk, label='spk curve')
+plt.plot(ensbub2, label='bub square')
+plt.plot(enspk2, label='spk square')
+pylab.legend(loc='best')
+plt.show()
+
 
 h5file.close()
 
