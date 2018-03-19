@@ -234,10 +234,7 @@ plt.show()
 h5file.close()
 
 
-#f = open('output.d','w')
-#for zz_ref in range(nz):
-# f.write("%4s\t%10s\n" % (zz_ref, np.mean(m1[zz_ref,:,:])))
-#f.close()
-    
-    
+np.savetxt('bub', ensbub, delimiter=',')     
+np.savetxt('bub2', ensbub2, delimiter=',')     
+
     
