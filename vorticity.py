@@ -72,6 +72,8 @@ winPoint =  int(winPercent*nz)
 
 delimiter = ''
 dz=dy=dx=Lz/nz
+if nx == 1:
+	dx = 1.0
 specout = 20000
 step = []
 totalstep=839626
