@@ -225,9 +225,12 @@ enspk = 2 * enspk
 
 
 
-plt.plot(ensbub2, label='bub curve')
-plt.plot(enspk2, label='spk curve')
+plt.plot(ensbub, label='bub curve')
+plt.plot(ensbub2, label='bub square')
+plt.plot(enspk, label='spk curve')
+plt.plot(enspk2, label='spk square')
 pylab.legend(loc='best')
+pylab.savefig('ensaftertip')
 plt.show()
 
 
@@ -235,6 +238,9 @@ h5file.close()
 
 
 np.savetxt('bub', ensbub, delimiter=',')     
-np.savetxt('bub2', ensbub2, delimiter=',')     
+np.savetxt('bubsq', ensbub2, delimiter=',')     
+np.savetxt('spk', enspk, delimiter=',')     
+np.savetxt('spksq', enspk2, delimiter=',')     
+
 
     
