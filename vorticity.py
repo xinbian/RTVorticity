@@ -48,10 +48,13 @@ winPercent = 0.1
 
 rhoH =1.0833
 rhoL =1.0
-rho_inc = (rhoH + rhoL)/2.0
-
 waveLen = 0.4
 #input done
+
+rd = rhoL/rhoH
+k=2*np.pi/waveLen
+rho_inc = (rhoH + rhoL)/2.0
+
 
 mylist = [parentDir,'/',inFile]
 delimiter = ''
@@ -220,13 +223,10 @@ for istep in step:
     i = i + 1
 
     
-    
-    
 ensbub = 2 * ensbub
 enspk = 2 * enspk
 
-
-
+bubspeed = np.sqrt(1/np.pi+rd/(1-rd)*ensbub/(4*np.pi*k*g))
 plt.plot(ensbub, label='bub curve')
 plt.plot(ensbub2, label='bub square')
 plt.plot(enspk, label='spk curve')
@@ -234,6 +234,8 @@ plt.plot(enspk2, label='spk square')
 pylab.legend(loc='best')
 pylab.savefig('ensaftertip')
 plt.show()
+
+plt.plot(bubspeed)
 
 
 h5file.close()
