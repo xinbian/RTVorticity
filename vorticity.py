@@ -226,7 +226,7 @@ for istep in step:
 ensbub = 2 * ensbub
 enspk = 2 * enspk
 
-bubspeed = np.sqrt(1/np.pi+rd/(1-rd)*ensbub/(4*np.pi*k*g))
+bubspeed = np.sqrt(1/(3*np.pi)+rd/(1-rd)*ensbub/(4*np.pi*k*g))
 plt.plot(ensbub, label='bub curve')
 plt.plot(ensbub2, label='bub square')
 plt.plot(enspk, label='spk curve')
@@ -240,7 +240,7 @@ plt.plot(bubspeed)
 
 h5file.close()
 
-
+np.savetxt('bubspeed', bubspeed, delimiter=',')   
 np.savetxt('bub', ensbub, delimiter=',')     
 np.savetxt('bubsq', ensbub2, delimiter=',')     
 np.savetxt('spk', enspk, delimiter=',')     
