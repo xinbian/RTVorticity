@@ -67,13 +67,17 @@ nx=m1.shape[2]
 
 winPoint =  int(winPercent*nz)
 
+
+
+
+
 delimiter = ''
 dz=dy=dx=Lz/nz
 
 dx=1.0
 specout = 500
 step = []
-totalstep=170029
+totalstep = 164872
 for i in range(totalstep/specout):
     step.append(str((i+1)*specout).zfill(6))
 
@@ -94,9 +98,10 @@ ensbub = np.zeros(len(step))
 enspk = np.zeros(len(step))
 ensbub2 = np.zeros(len(step))
 enspk2 = np.zeros(len(step))
-
-
 bub_avr_area = np.zeros(len(step))
+ens3box = np.zeros((len(step), 3))
+bub_avr_area3box = np.zeros((len(step) ,3))
+
 
 i=0
 
@@ -173,6 +178,8 @@ for istep in step:
     #set averaging area
     bubRegion = int(bub_loc_all[i] - winPoint)
     spkRegion = int(sp_loc_all[i] + winPoint)
+
+
     
     #calculate vorticity behind bub 
     for j in range(ny/2):
@@ -185,13 +192,46 @@ for istep in step:
 
         if bub_inc_loc > bubRegion:
 
+
             ensbub[i] = ensbub[i] + np.sum(rho_data[bubRegion:bub_inc_loc, j, :]*(vorx[bubRegion:bub_inc_loc, j, :]**2
                      + vory[bubRegion:bub_inc_loc, j, :]**2
                      + vorz[bubRegion:bub_inc_loc, j, :]**2))*dx*dy*dz 
 
             bub_avr_area[i] += np.sum(rho_data[bubRegion:bub_inc_loc, j, :])*dx*dy*dz 
+
+            #actual vertical distance 
+            dist = bub_inc_loc - bubRegion
+            dist = dist/3
+
+            #first and second segmentation point
+            oneSeg = bubRegion + dist
+            twoSeg = bubRegion + 2*dist
+
+          
+            #for three boxes
+        
+            ens3box[i, 0] = ens3box[i, 0] + np.sum(rho_data[bubRegion:oneSeg, j, :]*(vorx[bubRegion:oneSeg, j, :]**2
+                     + vory[bubRegion:oneSeg, j, :]**2
+                     + vorz[bubRegion:oneSeg, j, :]**2))*dx*dy*dz 
+
+            bub_avr_area3box[i, 0] += np.sum(rho_data[bubRegion:oneSeg, j, :])*dx*dy*dz 
+
+
+            ens3box[i, 1] = ens3box[i, 1] + np.sum(rho_data[oneSeg:twoSeg, j, :]*(vorx[oneSeg:twoSeg, j, :]**2
+                     + vory[oneSeg:twoSeg, j, :]**2
+                     + vorz[oneSeg:twoSeg, j, :]**2))*dx*dy*dz 
+
+            bub_avr_area3box[i, 1] += np.sum(rho_data[oneSeg:twoSeg, j, :])*dx*dy*dz 
+
+
+            ens3box[i, 2] = ens3box[i, 2] + np.sum(rho_data[twoSeg:bub_inc_loc, j, :]*(vorx[twoSeg:bub_inc_loc, j, :]**2
+                     + vory[twoSeg:bub_inc_loc, j, :]**2
+                     + vorz[twoSeg:bub_inc_loc, j, :]**2))*dx*dy*dz 
+
+            bub_avr_area3box[i, 2] += np.sum(rho_data[twoSeg:bub_inc_loc, j, :])*dx*dy*dz 
                   
                   
+
                  
                   
                   
@@ -226,10 +266,17 @@ for istep in step:
     
 ensbub = 2 * ensbub
 enspk = 2 * enspk
-
 bub_avr_area = 2 * bub_avr_area
-
 omega0 = np.sqrt(ensbub/(2*bub_avr_area))
+
+
+
+#for three box
+ens3box = 2 * ens3box
+bub_avr_area3box = 2 * bub_avr_area3box
+omegabox0 = np.sqrt(ens3box[:,0]/(2*bub_avr_area3box[:,0]))
+omegabox1 = np.sqrt(ens3box[:,1]/(2*bub_avr_area3box[:,1]))
+omegabox2 = np.sqrt(ens3box[:,2]/(2*bub_avr_area3box[:,2]))
 
 
 np.savetxt('bub_avr_area', bub_avr_area, delimiter=',')   
@@ -238,6 +285,9 @@ np.savetxt('bubsq', ensbub2, delimiter=',')
 np.savetxt('spk', enspk, delimiter=',')     
 np.savetxt('spksq', enspk2, delimiter=',')   
 np.savetxt('omega0', omega0, delimiter=',')    
+np.savetxt('omegabox0', omegabox0, delimiter=',')    
+np.savetxt('omegabox1', omegabox1, delimiter=',')    
+np.savetxt('omegabox2', omegabox2, delimiter=',')    
 
 
 plt.plot(ensbub, label='bub curve')
